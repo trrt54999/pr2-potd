@@ -3,10 +3,10 @@
 ## 📊 Діаграми
 
 ### Концептуальна схема (Notation by Peter Chen)
-![Chen Diagram](diagrams/chen_diagram.png)
+![Chen Diagram](diagrams/chen-annotation.png)
 
 ### Логічна схема (Crow's Foot Notation)
-![Crow Diagram](diagrams/crow_diagram.png)
+![Crow Diagram](diagrams/crow.png)
 
 ## 📋 Повний перелік сутностей (20 таблиць)
 
