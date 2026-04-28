@@ -1,52 +1,69 @@
-# 🎭 Poem of the Damned - Database Design
+# 🎭 Poem of the Damned - Full Database Documentation
 
 ## 📊 Діаграми
 
-### Концептуальна схема (Peter Chen Notation)
-*Високорівневе відображення сутностей та їхніх взаємозв'язків.*
-![Chen Diagram](Assets/Images/chen_diagram.png)
+### Концептуальна схема (Notation by Peter Chen)
+![Chen Diagram](diagrams/chen_diagram.png)
 
 ### Логічна схема (Crow's Foot Notation)
-*Детальна схема 20 таблиць із визначенням типів даних SQLite та ключів.*
-![Crow Diagram](Assets/Images/crow_diagram.png)
+![Crow Diagram](diagrams/crow_diagram.png)
 
-## 📋 Сутності (Entities)
+## 📋 Повний перелік сутностей (20 таблиць)
 
-| Сутність         | Тип         | Опис                                    |
-| ---------------- | ----------- | --------------------------------------- |
-| **users**        | Independent | Облікові записи гравців                 |
-| **game_scenes**  | Independent | Сюжетні вузли (локації)                 |
-| **characters**   | Independent | Персонажі гри                           |
-| **achievements** | Independent | Глобальний список досягнень             |
-| **flags**        | Independent | Сюжетні змінні (прапорці стану)         |
-| **dialogues**    | Weak        | Репліки персонажів у межах сцен         |
-| **choices**      | Weak        | Варіанти виборів гравця                 |
-| **save_slots**   | Weak        | Точки збереження прогресу               |
-| **translations** | Weak        | Таблиці локалізації (Title, Desc, Text) |
+| Сутність | Категорія | Опис |
+|----------|-----------|------|
+| **users** | Core | Користувачі системи |
+| **client_settings** | Extension | Технічні налаштування (звук, графіка) |
+| **achievements** | Reference | Довідник усіх ігрових досягнень |
+| **achievement_title_trans** | Translation | Локалізація назв ачівок |
+| **achievement_desc_trans** | Translation | Локалізація описів ачівок |
+| **user_achievements** | Junction | Журнал отриманих досягнень гравцями |
+| **flags** | Reference | Сюжетні змінні (State Flags) |
+| **game_scenes** | Core | Сюжетні вузли та локації |
+| **choices** | Core | Можливі рішення гравця у сценах |
+| **choice_translations** | Translation | Локалізація тексту виборів |
+| **choice_effects** | Logic | Вплив вибору на прапорці (Flags) |
+| **user_unlocked_choices** | Junction | Історія відкритих гілок сюжету |
+| **characters** | Core | Персонажі гри |
+| **character_trans** | Translation | Локалізація імен персонажів |
+| **description_trans** | Translation | Локалізація описів персонажів |
+| **character_sprites** | Extension | Емоційні стани та посилання на асети |
+| **dialogues** | Core | Репліки діалогової системи |
+| **dialogue_translations** | Translation | Локалізація тексту діалогів |
+| **save_slots** | Transactional | Дані точок збереження |
+| **save_flags** | Transactional | Зріз стану прапорців у момент збереження |
 
-## 🔗 Зв'язки (Relationships)
+## 🔗 Повна карта зв'язків
 
-- `users` ↔ `client_settings` (**1:1**) — персоналізація інтерфейсу.
-- `game_scenes` → `dialogues` (**1:N**) — послідовність реплік у сцені.
-- `characters` → `character_sprites` (**1:N**) — набір емоцій персонажа.
-- `users` ↔ `achievements` (**M:N** via `user_achievements`) — відкриті досягнення.
-- `users` ↔ `choices` (**M:N** via `user_unlocked_choices`) — історія виборів.
-- `save_slots` → `save_flags` (**1:N**) — зріз стану сюжету на момент сейву.
+### Система гравця
+- `users` 1:1 `client_settings` (Кожен юзер має один конфіг).
+- `users` 1:N `user_achievements` & `user_unlocked_choices` (Прогрес юзера).
+- `users` 1:N `save_slots` (Слоти збереження).
+- `users` M:N `choices` проміжна таблиця `user_unlocked_choices`
 
-## ❔ Нормалізація
+### Сюжетна логіка
+- `game_scenes` 1:1 `game_scenes` (Самозв'язок: наступна сцена за замовчуванням).
+- `game_scenes` 1:N `choices` (Варіанти дій у сцені).
+- `game_scenes` 1:N `dialogues` (Контент сцени).
+- `choices` 1:N `choice_effects` (Зміни прапорців при виборі).
+- `choices` M:1 `flags` (Умова доступності вибору).
 
-База даних спроєктована згідно зі стандартом **3NF**:
-- **1NF**: Атомарність даних (всі текстові блоки винесені в окремі записи).
-- **2NF**: Відсутність часткових залежностей (використано сурогатні ключі `INTEGER PRIMARY KEY AUTOINCREMENT`).
-- **3NF**: Відсутність транзитивних залежностей (налаштування, спрайти та переклади відокремлені від основних сутностей).
+### Персонажі та Візуалізація
+- `characters` 1:N `character_sprites` (Набір емоцій).
+- `characters` 1:N `dialogues` (Хто говорить).
+- `character_sprites` 1:N `dialogues` (Яку емоцію показувати при репліці).
 
-## 🔧 Використання
+### Локалізація (I18n)
+- Всі таблиці з суфіксом `_translations` пов'язані 1:N зі своїми основними сутностями (`achievements`, `choices`, `characters`, `dialogues`).
 
-Для ініціалізації бази даних у проєкті:
+## 🗄️ Нормалізація (3NF)
 
-```bash
-# Створення структури
-sqlite3 poemofthedamned.db < DDL.sql
+- **1NF**: Атомарність забезпечена за рахунок винесення всіх локалізованих рядків у окремі таблиці.
+- **2NF**: Повна залежність від ключа. Всі таблиці використовують `id` як єдиний ідентифікатор.
+- **3NF**: Відсутні транзитивні залежності. Наприклад, спрайти не залежать від сцени напряму, а лише через діалог та персонажа.
 
-# Заповнення тестовими даними (Пролог)
-sqlite3 poemofthedamned.db < DML.sql
+## 📝 Архітектурні особливості (SQLite)
+
+- Всі сутності використовують `INTEGER PRIMARY KEY AUTOINCREMENT`.
+- Підтримка цілісності через `ON DELETE CASCADE` для всіх таблиць перекладів та асетів.
+- Для транзакційних таблиць (`save_slots`) передбачено унікальний індекс на пару `(user_id, slot_number)`.
