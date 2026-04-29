@@ -3,7 +3,7 @@
 ## 📊 Діаграми
 
 ### Концептуальна схема (Notation by Peter Chen)
-![Chen Diagram](diagrams/chen-annotation.png)
+![Chen Diagram](diagrams/chen2.png)
 
 ### Логічна схема (Crow's Foot Notation)
 ![Crow Diagram](diagrams/crow.png)
